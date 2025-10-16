@@ -4,7 +4,7 @@ This repository integrates two main components that together form an end-to-end 
 - **LLVM Compiler Extension** (`llvm/`) — adds a new RISC-V pseudo-instruction for YUV→RGB conversion.
 - **FPGA Gateware** (`fpga/`) — implements the corresponding accelerator in Verilog for the **BeagleV-Fire** platform.
 
-Both components are part of a larger academic and research project developed at **Transilvania University of Brașov** in collaboration with **NXP Semiconductors** and **BeagleBoard.org**, presented at **SIITME 2025**.
+Both components are part of a larger academic and research project developed at **Transilvania University of Brașov** in collaboration with **NXP Semiconductors** and **BeagleBoard.org**.
 
 ---
 
