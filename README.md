@@ -1,44 +1,55 @@
-# The LLVM Compiler Infrastructure
+# ⚙️ FPGA-Augmented RISC-V LLVM Backend
 
-[![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/llvm/llvm-project/badge)](https://securityscorecards.dev/viewer/?uri=github.com/llvm/llvm-project)
-[![OpenSSF Best Practices](https://www.bestpractices.dev/projects/8273/badge)](https://www.bestpractices.dev/projects/8273)
-[![libc++](https://github.com/llvm/llvm-project/actions/workflows/libcxx-build-and-test.yaml/badge.svg?branch=main&event=schedule)](https://github.com/llvm/llvm-project/actions/workflows/libcxx-build-and-test.yaml?query=event%3Aschedule)
+This repository integrates two main components that together form an end-to-end **hardware/software co-design framework**:
+- **LLVM Compiler Extension** (`llvm/`) — adds a new RISC-V pseudo-instruction for YUV→RGB conversion.
+- **FPGA Gateware** (`fpga/`) — implements the corresponding accelerator in Verilog for the **BeagleV-Fire** platform.
 
-Welcome to the LLVM project!
+Both components are part of a larger academic and research project developed at **Transilvania University of Brașov** in collaboration with **NXP Semiconductors** and **BeagleBoard.org**, presented at **SIITME 2025**.
 
-This repository contains the source code for LLVM, a toolkit for the
-construction of highly optimized compilers, optimizers, and run-time
-environments.
+---
 
-The LLVM project has multiple components. The core of the project is
-itself called "LLVM". This contains all of the tools, libraries, and header
-files needed to process intermediate representations and convert them into
-object files. Tools include an assembler, disassembler, bitcode analyzer, and
-bitcode optimizer.
+## 🖥️ Platform
 
-C-like languages use the [Clang](https://clang.llvm.org/) frontend. This
-component compiles C, C++, Objective-C, and Objective-C++ code into LLVM bitcode
--- and from there into object files, using LLVM.
+The system targets the **BeagleV-Fire** development board, powered by the **Microchip PolarFire SoC (MPFS025T)**.  
+This device combines:
+- 5× RISC-V cores (1× E51 monitor core, 4× U54 application cores)
+- Integrated FPGA fabric (~23k logic elements, 68 DSP blocks)
+- Shared AXI/AMBA interconnect between CPU and FPGA
+- DDR, PCIe, and multiple I/O interfaces
 
-Other components include:
-the [libc++ C++ standard library](https://libcxx.llvm.org),
-the [LLD linker](https://lld.llvm.org), and more.
+The platform runs **Linux natively on RISC-V**, allowing direct interaction with the FPGA fabric through memory-mapped I/O and DMA.
 
-## Getting the Source Code and Building LLVM
+---
 
-Consult the
-[Getting Started with LLVM](https://llvm.org/docs/GettingStarted.html#getting-the-source-code-and-building-llvm)
-page for information on building and running LLVM.
+## 🧩 Project Overview
 
-For information on how to contribute to the LLVM project, please take a look at
-the [Contributing to LLVM](https://llvm.org/docs/Contributing.html) guide.
+This project demonstrates **FPGA-accelerated YUV422 → RGB image conversion** using a **custom LLVM compiler intrinsic** and a **hardware accelerator**.
 
-## Getting in touch
+It bridges two layers:
 
-Join the [LLVM Discourse forums](https://discourse.llvm.org/), [Discord
-chat](https://discord.gg/xS7Z362),
-[LLVM Office Hours](https://llvm.org/docs/GettingInvolved.html#office-hours) or
-[Regular sync-ups](https://llvm.org/docs/GettingInvolved.html#online-sync-ups).
+1. **Software (Compiler + Runtime)**
+   - Introduces `__builtin_riscv_yuvrgb(yuv, rgb, H, W)` as a new **Clang builtin**, mapped to an **LLVM intrinsic**.
+   - The intrinsic is lowered to a **RISC-V pseudo-instruction**, which expands into MMIO-based control and polling logic that drives the FPGA.
+   - A small user-space runtime stages image data, invokes the builtin, and writes the converted output back to disk.
 
-The LLVM project has adopted a [code of conduct](https://llvm.org/docs/CodeOfConduct.html) for
-participants to all modes of communication within the project.
+2. **Hardware (FPGA Accelerator)**
+   - Verilog implementation of the YUV→RGB pipeline, connected to the SoC via the **APB/AXI bus**.
+   - Two configurations were tested:
+     - **Processor-driven** transfer (without DMA)
+     - **DMA-enabled** transfer for high-throughput image streaming
+   - The accelerator converts 4 pixels in parallel, with data synchronization handled by a finite-state machine.
+
+---
+
+## 🧠 Compiler Integration
+
+The compiler flow includes:
+- **Clang Front-End:** Defines the new builtin in `BuiltinsRISCV.td` and emits an intrinsic call.
+- **LLVM IR:** Declares `@llvm.riscv.yuvrgb` with proper memory-side attributes (`ReadOnly`, `WriteOnly`, `IntrArgMemOnly`).
+- **RISC-V Back-End:** Matches the intrinsic to a pseudo-instruction (`RISCVExpandPseudoInsts.cpp`) that expands into load/store sequences for the FPGA MMIO region.
+- **Runtime:** Handles image allocation, file parsing, and invocation of the intrinsic via:
+  ```c
+  __builtin_riscv_yuvrgb(yuv, rgb, H, W);
+`
+  This approach keeps the frontend portable and isolates all hardware semantics in the backend, enabling flexible experimentation with FPGA-accelerated execution.
+  
