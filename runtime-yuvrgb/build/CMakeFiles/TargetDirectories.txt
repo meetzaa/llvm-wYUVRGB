@@ -1,0 +1,3 @@
+/mnt/s/WIP/llvm-project/runtime-yuvrgb/build/CMakeFiles/yuvrgb_runtime.dir
+/mnt/s/WIP/llvm-project/runtime-yuvrgb/build/CMakeFiles/edit_cache.dir
+/mnt/s/WIP/llvm-project/runtime-yuvrgb/build/CMakeFiles/rebuild_cache.dir

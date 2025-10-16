@@ -1,0 +1,2 @@
+/usr/bin/ar qc libyuvrgb_runtime.a CMakeFiles/yuvrgb_runtime.dir/conversion.o CMakeFiles/yuvrgb_runtime.dir/runtime_yuv_rgb.o
+/usr/bin/ranlib libyuvrgb_runtime.a
