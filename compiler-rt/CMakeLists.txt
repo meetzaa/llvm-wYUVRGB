@@ -33,6 +33,7 @@ else()
   set(CMAKE_CFG_RESOLVED_INTDIR "")
 endif()
 
+include(fpga-rt)
 include(SetPlatformToolchainTools)
 include(base-config-ix)
 include(CompilerRTUtils)
